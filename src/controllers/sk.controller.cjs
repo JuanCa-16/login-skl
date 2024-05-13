@@ -2,7 +2,10 @@
 const pool = require('../../database/db.cjs');
 const bcrypt = require('bcrypt');
 const jwtGenerator = require('../utils/jwtGenerator.cjs');
+//---------------------------------------------
+//MANEJO USUARIOS
 
+//Obtener todos los usuarios
 const getAllUsuarios = async (req,res) => {
     
     try {
@@ -13,6 +16,7 @@ const getAllUsuarios = async (req,res) => {
     }
 }
 
+//Obtener un usuario por ID
 const getUsuarioId = async (req,res) => {
 
     try {
@@ -30,6 +34,7 @@ const getUsuarioId = async (req,res) => {
     }
 }
 
+//Eliminar un usuario por ID
 const deleateUsuario = async (req,res) => {
     
     const {id} = req.params;
@@ -42,7 +47,8 @@ const deleateUsuario = async (req,res) => {
         });
 
         console.log(result.rows[0]);
-        return res.status(204);//estado de que funciono todo bien pero no devuelvo body no devuelvo nada
+        //return res.status(204);//estado de que funciono todo bien pero no devuelvo body no devuelvo nada
+        return res.json({eliminado: "Empleado Eliminado"});
         //si despues lo quiero cambiar depronto es el sendStatus malo, solo es status
     } catch (error) {
         console.log(error.message)
@@ -57,10 +63,11 @@ const updateUsuarioId = async (req,res) => {
     try {
         const {id} = req.params;
         const {nombre, apellidos, correo, clave, telefono, pais} = req.body; //Cuerpo de la peticion suele ser un json
-
+        
         const email = await pool.query("SELECT * FROM usuario where correo = $1", [correo]);
-
-        if(email.rows.length !== 0){
+        const antiguo = await pool.query("SELECT * FROM usuario where id = $1", [id]);
+        
+        if(email.rows.length !== 0 && (antiguo.rows[0].correo !== correo)){
             return res.status(401).json("Este correo ya se encuentra en uso");
         }
 
@@ -193,6 +200,20 @@ const getUsuaLog = async (req,res) =>{
 
     }
 }
+
+//----------------------------------------------------
+//AEROPUERTOS
+
+//Obtener todos los aeropuertos
+const getAllAero = async (req,res) => {
+    
+    try {
+        const aerepuertos = await pool.query("SELECT * FROM aeropuerto");
+        res.json(aerepuertos.rows); //Lado del cliente
+    } catch (error) {
+        console.log(error.message);
+    }
+}
 //-----------------------------------------------------
 
 module.exports = {
@@ -203,5 +224,6 @@ module.exports = {
     updateUsuarioId,
     verificarUsuario,
     isAutenticado,
-    getUsuaLog
+    getUsuaLog,
+    getAllAero
 }
