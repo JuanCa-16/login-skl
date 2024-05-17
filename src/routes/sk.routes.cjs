@@ -1,6 +1,6 @@
 //URLs que el front va a utilizar para hacer peticiones
 const {Router} = require('express');
-const {getAllUsuarios, createUsuario, deleateUsuario, getUsuarioId, updateUsuarioId, verificarUsuario, isAutenticado, getUsuaLog, getAllAero} = require('../controllers/sk.controller.cjs')
+const {getAllUsuarios, createUsuario, deleateUsuario, getUsuarioId, updateUsuarioId, verificarUsuario, isAutenticado, getUsuaLog, getAllAero, getVueloBuscado} = require('../controllers/sk.controller.cjs')
 const router = Router();//Crear nuevas urls
 const auth = require('../middleware/autorizacion.cjs');
 
@@ -45,5 +45,7 @@ router.get('/usuarioLogin',auth,getUsuaLog);
 
 //Obtener Aeropuertos
 router.get('/aeropuertos',getAllAero);
+
+router.post('/vuelos', getVueloBuscado);
 //---------------------------------------
 module.exports = router;

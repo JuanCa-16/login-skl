@@ -202,7 +202,7 @@ const getUsuaLog = async (req,res) =>{
 }
 
 //----------------------------------------------------
-//AEROPUERTOS
+//AEROPUERTOS y VUELOS
 
 //Obtener todos los aeropuertos
 const getAllAero = async (req,res) => {
@@ -214,6 +214,23 @@ const getAllAero = async (req,res) => {
         console.log(error.message);
     }
 }
+
+const getVueloBuscado = async(req,res) =>{
+    try {
+
+        const {aeropuertoSalida, aeropuertoLlegada, fecha} = req.body;
+        
+        const result = await pool.query('SELECT v.id_Avion, v.id_Vuelo, v.estado, v.hora, v.fecha, l.Id_Aeropuerto AS id_Aeropuerto_Llegada, l.Pais AS pais_llegada, l.Nombre AS nombre_aeropuerto_llegada, l.Ciudad AS ciudad_llegada, s.Id_Aeropuerto AS id_Aeropuerto_Salida, s.Pais AS pais_salida, s.Nombre AS nombre_aeropuerto_salida, s.Ciudad AS ciudad_salida FROM VUELO v JOIN AEROPUERTO l ON v.aeropuertoLlegada = l.Id_Aeropuerto JOIN AEROPUERTO s ON v.aeropuertoSalida = s.Id_Aeropuerto WHERE s.Id_Aeropuerto = $1 AND l.Id_Aeropuerto= $2 AND v.fecha = $3', [aeropuertoSalida, aeropuertoLlegada, fecha]);
+        if (result.rows.length === 0) return res.status(404).json({
+            message: 'NO hay vuelos'
+        }) 
+        return res.json(result.rows);
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+
 //-----------------------------------------------------
 
 module.exports = {
@@ -225,5 +242,6 @@ module.exports = {
     verificarUsuario,
     isAutenticado,
     getUsuaLog,
-    getAllAero
+    getAllAero,
+    getVueloBuscado
 }
