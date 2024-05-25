@@ -190,7 +190,7 @@ const isAutenticado = async (req,res) =>{
 const getUsuaLog = async (req,res) =>{
     try {
 
-        const result = await pool.query('SELECT nombre, id FROM usuario WHERE correo = $1', [req.correo]);
+        const result = await pool.query('SELECT nombre, apellidos, id FROM usuario WHERE correo = $1', [req.correo]);
         res.json(result.rows[0]);
 
     } catch (err) {
@@ -230,8 +230,87 @@ const getVueloBuscado = async(req,res) =>{
     }
 }
 
+const getVuelosAsignados = async (req, res) => {
+    try {
+        const {id} = req.params;
+        const userId = id;
+        
+        const query = `SELECT V.id_vuelo,V.id_avion,V.estado,V.hora,V.fecha,A1.nombre AS aeropuertosalida,A2.nombre AS aeropuertollegada FROM public.vuelo V JOIN public.administrar A ON V.id_vuelo = A.id_vuelo JOIN public.usuario U ON A.id_usuario = U.id JOIN public.aeropuerto A1 ON V.aeropuertosalida = A1.id_aeropuerto JOIN public.aeropuerto A2 ON V.aeropuertollegada = A2.id_aeropuerto WHERE U.id = $1;`;
+        
+        const result = await pool.query(query, [userId]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: 'No hay vuelos :)'
+            });
+        }
+        
+        return res.json(result.rows);
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
 
 //-----------------------------------------------------
+//ASIENTOS
+const getAsientosVuelo = async (req,res) => {
+    
+    try {
+        const {vuelo} = req.params;
+        const asientos = await pool.query("SELECT numero_asiento FROM asiento a WHERE a.vuelo = $1 AND a.estado = 'Ocupado'",[vuelo]);
+        res.json(asientos.rows); //Lado del cliente
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+const actualizarAsiento = async (req, res) => {
+    try {
+        const { asientos, idVuelo } = req.body;
+
+        for (const asiento of asientos) {
+            await pool.query("UPDATE asiento SET estado ='Ocupado' WHERE numero_asiento = $1 AND vuelo = $2", [asiento, idVuelo]);
+        }
+
+        res.json({ message: 'Estados de los asientos actualizados correctamente.' });
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({ error: 'Error actualizando los asientos' });
+    }
+};
+
+const updateMillas = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Ejecutar la consulta para obtener las millas actuales del usuario
+        const result = await pool.query("SELECT millas FROM usuario WHERE id = $1", [id]);
+        
+        // Verificar si el usuario fue encontrado
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // Obtener las millas antiguas
+        const millasAntiguas = result.rows[0].millas;
+
+        // Sumar las nuevas millas
+        const millas = millasAntiguas + 100;
+
+        // Actualizar las millas del usuario en la base de datos
+        const updateResult = await pool.query("UPDATE usuario SET millas = $1 WHERE id = $2 RETURNING millas", [millas, id]);
+
+        // Enviar una respuesta JSON con el usuario actualizado
+        res.json({ message: 'Sumas 100 Millas ahora tienes: ', usuario: updateResult.rows[0] });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: 'Error actualizando las millas' });
+    }
+};
+
 
 module.exports = {
     getAllUsuarios,
@@ -243,5 +322,9 @@ module.exports = {
     isAutenticado,
     getUsuaLog,
     getAllAero,
-    getVueloBuscado
+    getVueloBuscado,
+    getVuelosAsignados,
+    getAsientosVuelo,
+    actualizarAsiento,
+    updateMillas
 }
