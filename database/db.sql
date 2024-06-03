@@ -47,6 +47,20 @@ CREATE TABLE ASIENTO (
     FOREIGN KEY (Vuelo) REFERENCES VUELO(Id_Vuelo)
 );
 
+CREATE TABLE TIQUETE (
+    Id_Tiquete SERIAL PRIMARY KEY,
+    Metodo_de_pago VARCHAR(255),
+    Asientos VARCHAR(50),
+    Clase VARCHAR(50),
+    Precio INT,
+    Id_Vuelo INT NOT NULL,
+    Id_Usuario VARCHAR(20) NOT NULL,
+    FOREIGN KEY (Id_Vuelo) REFERENCES VUELO(id_Vuelo),
+    FOREIGN KEY (Id_Usuario) REFERENCES USUARIO(id)
+);
+
+
+
 INSERT INTO ASIENTO (Id_Asiento, Numero_Asiento, Estado, Vuelo) VALUES
 (1, '0-0', 'Disponible', 1),
 (2, '0-1', 'Ocupado', 1),

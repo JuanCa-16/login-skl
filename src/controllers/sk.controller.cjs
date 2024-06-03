@@ -253,6 +253,100 @@ const getVuelosAsignados = async (req, res) => {
     }
 }
 
+//Crear un usuario
+const createVuelo = async (req,res) => {
+
+    //1. Destructuracion
+    const {infoVuelo, listaEmp} = req.body; //Cuerpo de la peticion suele ser un json
+    const {aeropuertoSalida,aeropuertoLlegada,fecha,hora,id, opcInicialSalida} = infoVuelo
+    
+    try {
+
+        //Comprobaciones que no halla un id_avion en esa fecha
+        const info = await pool.query("SELECT id_Vuelo FROM vuelo WHERE fecha = $1 AND id_avion = $2", [fecha,id]);
+        if(info.rows.length !== 0){
+            return res.status(401).json("El avion ya tiene un vuelo ese dia");
+        }
+
+        const id_result = await pool.query("SELECT id_Vuelo FROM vuelo ORDER BY id_Vuelo DESC LIMIT 1;", []);
+        let id_nuevo = (id_result.rows[0].id_vuelo) + 1
+
+        const id_asiento = await pool.query("SELECT Id_Asiento FROM asiento ORDER BY Id_Asiento DESC LIMIT 1;", []);
+        let id_nuevo_asiento = (id_asiento.rows[0].id_asiento) + 1
+
+        
+        const result = await pool.query("INSERT INTO vuelo (id_Vuelo, id_Avion, estado, hora, fecha, aeropuertoLlegada, aeropuertoSalida) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",[
+            id_nuevo, id, 'Programado', hora, fecha, aeropuertoLlegada, aeropuertoSalida
+        ]);
+
+        // Insertar los asientos para el vuelo recién insertado
+        // Genera 60 filas de datos
+        for (let i = 1; i <= 60; i++) {
+            // Calcula el número de fila (entre 0 y 9)
+            const fila = Math.floor((i - 1) / 6);
+            // Calcula el número de columna (entre 0 y 5)
+            const columna = (i - 1) % 6;
+            // Calcula el número de asiento (en el formato 'fila-columna')
+            const numero_asiento = fila + '-' + columna;
+
+            // Inserta el asiento en la tabla ASIENTO
+            await pool.query("INSERT INTO asiento (Id_Asiento, Numero_Asiento, Estado, Vuelo) VALUES ($1, $2, $3, $4)", [
+                id_nuevo_asiento, numero_asiento, 'Disponible', id_nuevo
+            ]);
+
+            console.log("Asiento insertado:", numero_asiento);
+            id_nuevo_asiento = id_nuevo_asiento + 1
+        }
+
+
+        for (const emp of listaEmp) {
+            let id_emp = emp.value
+            const respuesta = await pool.query("INSERT INTO administrar (Id_Usuario, Id_Vuelo) VALUES ($1,$2) RETURNING *",[
+                id_emp, id_nuevo]);
+            
+            console.log(respuesta.rows)
+        }
+
+        res.json({ message: 'Vuelo creado Exitosamente' });
+        
+    } catch (error) {
+        //Pueden ser de tipo, que ya hay una primary key
+        console.error(error.message);
+        res.status(500).json(error.message); //Error del servidor
+    }
+
+}
+
+const obtenerTiquets = async (req,res) => {
+    
+    const { id } = req.params;
+    try {
+        const result = await pool.query("SELECT TIQUETE.Id_Tiquete, TIQUETE.Asientos, TIQUETE.Clase, TIQUETE.Precio, VUELO.id_Avion, VUELO.id_Vuelo, VUELO.fecha, LLEGADA.Nombre AS Aeropuerto_Llegada, SALIDA.Nombre AS Aeropuerto_Salida, USUARIO.id AS Id_Usuario FROM TIQUETE JOIN VUELO ON TIQUETE.Id_Vuelo = VUELO.id_Vuelo JOIN USUARIO ON TIQUETE.Id_Usuario = USUARIO.id JOIN AEROPUERTO AS LLEGADA ON VUELO.aeropuertoLlegada = LLEGADA.Id_Aeropuerto JOIN AEROPUERTO AS SALIDA ON VUELO.aeropuertoSalida = SALIDA.Id_Aeropuerto WHERE USUARIO.id = $1", [id]);
+
+        res.json(result.rows); 
+        
+    } catch (error) {
+        // Manejo de errores
+    }
+}
+
+const createPase = async (req,res) => {
+
+    const {precio, id_vuelo, id_usuario, asientos, clase} = req.body; //Cuerpo de la peticion suele ser un json
+    const asientosCadena = asientos.join(',');
+    try {
+        const result = await pool.query("INSERT INTO tiquete (Metodo_de_pago,Asientos,Clase,Precio,Id_Vuelo,Id_Usuario) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",[
+            "Debito", asientosCadena, clase,precio,id_vuelo,id_usuario
+        ]);
+
+        res.json({ message: 'Vuelo Guardado' });
+        
+    } catch (error) {
+        
+    }
+}
+
+
 
 //-----------------------------------------------------
 //ASIENTOS
@@ -326,5 +420,8 @@ module.exports = {
     getVuelosAsignados,
     getAsientosVuelo,
     actualizarAsiento,
-    updateMillas
+    updateMillas,
+    createVuelo,
+    createPase,
+    obtenerTiquets
 }

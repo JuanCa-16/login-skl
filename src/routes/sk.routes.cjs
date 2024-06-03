@@ -1,6 +1,6 @@
 //URLs que el front va a utilizar para hacer peticiones
 const {Router} = require('express');
-const {getAllUsuarios, createUsuario, deleateUsuario, getUsuarioId, updateUsuarioId, verificarUsuario, isAutenticado, getUsuaLog, getAllAero, getVueloBuscado,getVuelosAsignados,getAsientosVuelo,actualizarAsiento,updateMillas} = require('../controllers/sk.controller.cjs')
+const {getAllUsuarios, createUsuario, deleateUsuario, getUsuarioId, updateUsuarioId, verificarUsuario, isAutenticado, getUsuaLog, getAllAero, getVueloBuscado,getVuelosAsignados,getAsientosVuelo,actualizarAsiento,updateMillas, createVuelo,createPase,obtenerTiquets} = require('../controllers/sk.controller.cjs')
 const router = Router();//Crear nuevas urls
 const auth = require('../middleware/autorizacion.cjs');
 
@@ -51,12 +51,19 @@ router.post('/vuelos', getVueloBuscado);
 //Obtener los vuelos asignados de un id:
 router.get('/vuelosasignados/:id', getVuelosAsignados);
 
+//Crear un Vuelo
+router.post('/vuelo', createVuelo);
+//Crear un Ticket
+router.post('/paseAbordaje', createPase);
+
 //Obtener los aientos asignados de un vuelo:
 router.get('/asientosvuelo/:vuelo', getAsientosVuelo);
 
 router.put('/ocuparasientos',actualizarAsiento)
 
 router.put('/millas/:id', updateMillas);
+
+router.get("/obtenerCompras/:id", obtenerTiquets);
 
 
 
