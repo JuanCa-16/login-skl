@@ -321,7 +321,8 @@ const obtenerTiquets = async (req,res) => {
     
     const { id } = req.params;
     try {
-        const result = await pool.query("SELECT TIQUETE.Id_Tiquete, TIQUETE.Asientos, TIQUETE.Clase, TIQUETE.Precio, VUELO.id_Avion, VUELO.id_Vuelo, VUELO.fecha, LLEGADA.Nombre AS Aeropuerto_Llegada, SALIDA.Nombre AS Aeropuerto_Salida, USUARIO.id AS Id_Usuario FROM TIQUETE JOIN VUELO ON TIQUETE.Id_Vuelo = VUELO.id_Vuelo JOIN USUARIO ON TIQUETE.Id_Usuario = USUARIO.id JOIN AEROPUERTO AS LLEGADA ON VUELO.aeropuertoLlegada = LLEGADA.Id_Aeropuerto JOIN AEROPUERTO AS SALIDA ON VUELO.aeropuertoSalida = SALIDA.Id_Aeropuerto WHERE USUARIO.id = $1", [id]);
+        const result = await pool.query("SELECT TIQUETE.Id_Tiquete, TIQUETE.Asientos, TIQUETE.Clase, TIQUETE.Precio, VUELO.id_Avion, VUELO.id_Vuelo, VUELO.fecha, LLEGADA.Nombre AS Aeropuerto_Llegada, SALIDA.Nombre AS Aeropuerto_Salida, USUARIO.id AS Id_Usuario, EQUIPAJE.Maleta, COMIDA.Nombre AS Comida_Nombre FROM TIQUETE JOIN VUELO ON TIQUETE.Id_Vuelo = VUELO.id_Vuelo JOIN USUARIO ON TIQUETE.Id_Usuario = USUARIO.id JOIN AEROPUERTO AS LLEGADA ON VUELO.aeropuertoLlegada = LLEGADA.Id_Aeropuerto JOIN AEROPUERTO AS SALIDA ON VUELO.aeropuertoSalida = SALIDA.Id_Aeropuerto JOIN EQUIPAJE ON EQUIPAJE.Id_TiqueteV = TIQUETE.Id_Tiquete JOIN COMIDA ON COMIDA.Id_TiqueteV = TIQUETE.Id_Tiquete WHERE USUARIO.id = $1", [id]);
+
 
         res.json(result.rows); 
         
@@ -330,21 +331,37 @@ const obtenerTiquets = async (req,res) => {
     }
 }
 
-const createPase = async (req,res) => {
-
-    const {precio, id_vuelo, id_usuario, asientos, clase} = req.body; //Cuerpo de la peticion suele ser un json
+const createPase = async (req, res) => {
+    const { precio, id_vuelo, id_usuario, asientos, clase, comida, maleta } = req.body; // Cuerpo de la petición suele ser un JSON
     const asientosCadena = asientos.join(',');
+
     try {
-        const result = await pool.query("INSERT INTO tiquete (Metodo_de_pago,Asientos,Clase,Precio,Id_Vuelo,Id_Usuario) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",[
-            "Debito", asientosCadena, clase,precio,id_vuelo,id_usuario
-        ]);
+        // Insertar en la tabla tiquete y obtener el Id_Tiquete insertado
+        const result = await pool.query(
+            "INSERT INTO tiquete (Metodo_de_pago, Asientos, Clase, Precio, Id_Vuelo, Id_Usuario) VALUES ($1, $2, $3, $4, $5, $6) RETURNING Id_Tiquete",
+            ["Debito", asientosCadena, clase, precio, id_vuelo, id_usuario]
+        );
+
+        const idTiquete = result.rows[0].id_tiquete;
+
+        // Insertar en la tabla comida usando el Id_Tiquete obtenido
+        await pool.query(
+            "INSERT INTO comida (Nombre, Id_tiqueteV) VALUES ($1, $2) RETURNING *",
+            [comida, idTiquete]
+        );
+
+        // Insertar en la tabla equipaje usando el Id_Tiquete obtenido
+        await pool.query(
+            "INSERT INTO equipaje (Maleta, Id_tiqueteV) VALUES ($1, $2) RETURNING *",
+            [maleta, idTiquete]
+        );
 
         res.json({ message: 'Vuelo Guardado' });
-        
     } catch (error) {
-        
+        console.error(error.message);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-}
+};
 
 
 
