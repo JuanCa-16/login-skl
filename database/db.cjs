@@ -1,13 +1,14 @@
 //Conectarse a la BD
 const {Pool} = require('pg'); 
-const {db} = require('./config.cjs'); //Archivo que contendra las variables
+// const {db} = require('./config.cjs'); //Archivo que contendra las variables
 
 const pool = new Pool({
-    user: db.user,
-    password: db.password,
-    host: db.host,
-    port: db.port,
-    database: db.database,
+    // user: db.user,
+    // password: db.password,
+    // host: db.host,
+    // port: db.port,
+    // database: db.database,
+    connectionString: process.env.POSTGRES_URL,
 })
 
 module.exports = pool;
