@@ -321,7 +321,7 @@ const obtenerTiquets = async (req,res) => {
     
     const { id } = req.params;
     try {
-        const result = await pool.query("SELECT TIQUETE.Id_Tiquete, TIQUETE.Asientos, TIQUETE.Clase, TIQUETE.Precio, VUELO.id_Avion, VUELO.id_Vuelo, VUELO.fecha, LLEGADA.Nombre AS Aeropuerto_Llegada, SALIDA.Nombre AS Aeropuerto_Salida, USUARIO.id AS Id_Usuario, EQUIPAJE.Maleta, COMIDA.Nombre AS Comida_Nombre FROM TIQUETE JOIN VUELO ON TIQUETE.Id_Vuelo = VUELO.id_Vuelo JOIN USUARIO ON TIQUETE.Id_Usuario = USUARIO.id JOIN AEROPUERTO AS LLEGADA ON VUELO.aeropuertoLlegada = LLEGADA.Id_Aeropuerto JOIN AEROPUERTO AS SALIDA ON VUELO.aeropuertoSalida = SALIDA.Id_Aeropuerto JOIN EQUIPAJE ON EQUIPAJE.Id_TiqueteV = TIQUETE.Id_Tiquete JOIN COMIDA ON COMIDA.Id_TiqueteV = TIQUETE.Id_Tiquete WHERE USUARIO.id = $1", [id]);
+        const result = await pool.query("SELECT TIQUETE.Id_Tiquete, TIQUETE.Asientos, TIQUETE.Clase, TIQUETE.Precio, VUELO.id_Avion, VUELO.id_Vuelo, VUELO.fecha, VUELO.hora LLEGADA.Nombre AS Aeropuerto_Llegada, SALIDA.Nombre AS Aeropuerto_Salida, USUARIO.id AS Id_Usuario, EQUIPAJE.Maleta, COMIDA.Nombre AS Comida_Nombre FROM TIQUETE JOIN VUELO ON TIQUETE.Id_Vuelo = VUELO.id_Vuelo JOIN USUARIO ON TIQUETE.Id_Usuario = USUARIO.id JOIN AEROPUERTO AS LLEGADA ON VUELO.aeropuertoLlegada = LLEGADA.Id_Aeropuerto JOIN AEROPUERTO AS SALIDA ON VUELO.aeropuertoSalida = SALIDA.Id_Aeropuerto JOIN EQUIPAJE ON EQUIPAJE.Id_TiqueteV = TIQUETE.Id_Tiquete JOIN COMIDA ON COMIDA.Id_TiqueteV = TIQUETE.Id_Tiquete WHERE USUARIO.id = $1", [id]);
 
 
         res.json(result.rows); 
